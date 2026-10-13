@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "HomeHub",
+    "slug": "homehub-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "platforms": ["ios", "android"],
+    "splash": {
+      "backgroundColor": "#0c1322",
+      "resizeMode": "contain"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.homehub.mobile"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0c1322"
+      },
+      "package": "com.homehub.mobile"
+    }
+  }
+}
+

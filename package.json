@@ -1,0 +1,44 @@
+{
+  "name": "home-management-apps",
+  "version": "1.0.0",
+  "description": "HomeHub - Comprehensive Home Management System (Web, Android, iOS)",
+  "private": true,
+  "workspaces": [
+    "backend/shared",
+    "backend/api-gateway",
+    "backend/services/*",
+    "frontend/web",
+    "frontend/admin"
+  ],
+  "scripts": {
+    "db:up": "docker-compose -f database/docker-compose.yml up -d",
+    "db:down": "docker-compose -f database/docker-compose.yml down",
+    "db:logs": "docker-compose -f database/docker-compose.yml logs -f",
+    "db:dump": "node scripts/db-dump.js",
+    "db:restore": "node scripts/db-restore.js",
+    "install:all": "npm install && cd backend/shared && npm install && cd ../api-gateway && npm install && cd ../services/auth-service && npm install && cd ../utility-service && npm install && cd ../asset-service && npm install && cd ../grocery-service && npm install && cd ../finance-service && npm install && cd ../activity-service && npm install",
+    "gateway": "cd backend/api-gateway && npm run dev",
+    "auth": "cd backend/services/auth-service && npm run dev",
+    "utility": "cd backend/services/utility-service && npm run dev",
+    "asset": "cd backend/services/asset-service && npm run dev",
+    "grocery": "cd backend/services/grocery-service && npm run dev",
+    "finance": "cd backend/services/finance-service && npm run dev",
+    "activity": "cd backend/services/activity-service && npm run dev",
+    "backend": "node scripts/start-backend.js",
+    "web": "cd frontend/web && npm run dev",
+    "admin": "cd frontend/admin && npm run dev",
+    "dev": "cd frontend/web && npm run dev",
+    "mobile": "cd frontend/mobile && npx expo start --lan"
+  },
+  "keywords": [
+    "home-management",
+    "microservices",
+    "express",
+    "react",
+    "react-native",
+    "mysql"
+  ],
+  "author": "",
+  "license": "ISC"
+}
+

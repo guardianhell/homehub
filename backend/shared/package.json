@@ -1,0 +1,16 @@
+{
+  "name": "@homehub/shared",
+  "version": "1.0.0",
+  "description": "Shared utilities, validation middleware, and security helpers for HomeHub microservices",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.9.2",
+    "zod": "^3.22.4"
+  }
+}
+

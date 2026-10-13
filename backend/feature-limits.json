@@ -1,0 +1,24 @@
+{
+  "FREE": {
+    "MAX_MEMBERS": 5,
+    "MAX_HOUSEHOLDS": 1,
+    "MAX_ASSETS": 3,
+    "MAX_BILLS": 3,
+    "MAX_PANTRY_ITEMS": 10,
+    "MAX_EXPENSES_PER_MONTH": 15,
+    "ALLOW_EXPORT_REPORT": false,
+    "ALLOW_AI_OCR": false
+  },
+  "PRO": {
+    "MAX_MEMBERS": "Infinity",
+    "MAX_HOUSEHOLDS": "Infinity",
+    "MAX_ASSETS": "Infinity",
+    "MAX_BILLS": "Infinity",
+    "MAX_PANTRY_ITEMS": "Infinity",
+    "MAX_EXPENSES_PER_MONTH": "Infinity",
+    "ALLOW_EXPORT_REPORT": true,
+    "ALLOW_AI_OCR": true
+  },
+  "updated_at": "2026-10-03T08:58:59.990Z",
+  "updated_by": "Unit Test Reset"
+}
