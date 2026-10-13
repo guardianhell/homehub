@@ -1,7 +1,18 @@
 import axios from "axios";
 
+const getBaseURL = () => {
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  // In the browser, prefer relative /api/v1 to leverage Vite proxy seamlessly across localhost & LAN
+  if (typeof window !== "undefined") {
+    return "/api/v1";
+  }
+  return "http://localhost:8000/api/v1";
+};
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1",
+  baseURL: getBaseURL(),
   headers: {
     "Content-Type": "application/json",
   },

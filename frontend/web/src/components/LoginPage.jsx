@@ -90,7 +90,7 @@ export default function LoginPage({ onLoginSuccess, onSwitchToRegister, sessionE
         err.code === 'ECONNREFUSED' ||
         err.message?.includes('Network Error') ||
         err.message?.includes('ECONNREFUSED') ||
-        err.isAxiosError;
+        (err.isAxiosError && !err.response);
 
       if (isNetworkError) {
         setErrorMessage(

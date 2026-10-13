@@ -22,15 +22,42 @@ const SERVICE_TARGETS = {
 };
 
 // 1. Security Headers (Helmet)
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  }),
+);
 
-// 2. Strict CORS Configuration
+// 2. CORS Configuration
+const isDev = process.env.NODE_ENV !== "production";
+
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN
-      ? process.env.CORS_ORIGIN.split(",")
-      : ["http://localhost:5173", "http://localhost:5174", "http://localhost:3000", "*"],
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
+      if (!origin) return callback(null, true);
+
+      if (process.env.CORS_ORIGIN) {
+        const allowed = process.env.CORS_ORIGIN.split(",").map((s) => s.trim());
+        if (allowed.includes("*") || allowed.includes(origin)) {
+          return callback(null, true);
+        }
+      }
+
+      // Allow localhost, 127.0.0.1, or local LAN networks (192.168.x.x, 10.x.x.x, 172.x.x.x) on any port
+      const isLocalOrLAN =
+        /^http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+)(:\d+)?$/.test(
+          origin,
+        );
+
+      if (isLocalOrLAN || isDev) {
+        return callback(null, true);
+      }
+
+      return callback(null, true);
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: [
       "Content-Type",
       "Authorization",
@@ -42,8 +69,6 @@ app.use(
 );
 
 // 3. Rate Limiting (Prevent Brute Force & DDoS)
-const isDev = process.env.NODE_ENV !== "production";
-
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: process.env.RATE_LIMIT_MAX
