@@ -55,6 +55,10 @@ const verifyQuota = (resourceType, countFn) => {
           maxAllowed = currentTierLimits.MAX_EXPENSES_PER_MONTH;
           resourceLabel = "Pencatatan Pengeluaran Bulanan";
           break;
+        case "ACTIVITIES":
+          maxAllowed = currentTierLimits.MAX_ACTIVITIES || 20;
+          resourceLabel = "Agenda & Aktivitas Bulanan";
+          break;
         default:
           return next();
       }

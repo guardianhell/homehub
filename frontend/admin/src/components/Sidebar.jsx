@@ -156,9 +156,11 @@ export default function Sidebar({ activeTab, onSelectTab, currentRole, isOpen, o
             Modul Kontrol
           </div>
           {menuItems.map((item) => {
+            const isAllowed = hasPermission(currentRole.id, item.requiredPerm);
+            if (!isAllowed) return null;
+
             const Icon = item.icon;
             const isActive = activeTab === item.id || (item.id === 'categories' && activeTab === 'utility_categories');
-            const isAllowed = hasPermission(currentRole.id, item.requiredPerm);
 
             return (
               <button
@@ -192,7 +194,7 @@ export default function Sidebar({ activeTab, onSelectTab, currentRole, isOpen, o
       {/* User Portal Link */}
       <div className="p-4 border-t border-slate-800 bg-slate-950/40">
         <a 
-          href="http://localhost:5173" 
+          href={import.meta.env.VITE_WEB_URL || (typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.hostname}:5173` : 'http://localhost:5173')} 
           target="_blank" 
           rel="noreferrer"
           className="flex items-center justify-between p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 text-slate-300 text-xs font-bold transition group"

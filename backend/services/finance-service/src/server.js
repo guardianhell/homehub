@@ -100,6 +100,10 @@ app.get("/monthly-comparison", async (req, res) => {
 app.get("/", async (req, res) => {
   const { month, category } = req.query;
 
+  if (month && !/^\d{4}-\d{2}$/.test(month)) {
+    return errorResponse(res, "Format bulan tidak valid, gunakan YYYY-MM.", 400);
+  }
+
   try {
     let query = "SELECT * FROM expenses WHERE household_id = ?";
     const params = [req.household.id];
@@ -129,10 +133,6 @@ function normalizeIndonesianAmount(val) {
 
   // If already a number
   if (typeof val === "number") {
-    // Check if it was parsed as a float from Indonesian thousands format (e.g. 35.000 -> 35, or 124.500 -> 124.5)
-    if (val > 0 && val < 500) {
-      val = Math.round(val * 1000);
-    }
     return Math.round(val);
   }
 
@@ -167,11 +167,7 @@ function normalizeIndonesianAmount(val) {
         s = parts[0] + parts[1];
       } else if (parts[1].length === 2) {
         // e.g. 35000.50 (cents) -> 35000
-        if (parseInt(parts[0], 10) >= 500) {
-          s = parts[0];
-        } else {
-          s = parts[0] + parts[1] + "0"; // e.g. 35.50 -> 35500
-        }
+        s = parts[0];
       } else {
         s = s.replace(/\./g, "");
       }
@@ -194,14 +190,7 @@ function normalizeIndonesianAmount(val) {
   }
 
   const cleanDigits = s.replace(/[^0-9]/g, "");
-  let num = parseInt(cleanDigits || "0", 10);
-
-  // If still suspiciously small (< 500), multiply by 1000
-  if (num > 0 && num < 500) {
-    num = num * 1000;
-  }
-
-  return num;
+  return parseInt(cleanDigits || "0", 10);
 }
 
 // POST /scan-receipt (Server-Side Google Gemini Vision AI OCR)
@@ -377,6 +366,10 @@ app.post(
 app.get("/summary", async (req, res) => {
   const month = req.query.month || new Date().toISOString().slice(0, 7); // YYYY-MM
 
+  if (!/^\d{4}-\d{2}$/.test(month)) {
+    return errorResponse(res, "Format bulan tidak valid, gunakan YYYY-MM.", 400);
+  }
+
   try {
     // Total spent
     const [totalRows] = await db.execute(
@@ -423,6 +416,11 @@ app.get("/summary", async (req, res) => {
 // GET /budget (Get monthly budget for household)
 app.get("/budget", async (req, res) => {
   const month = req.query.month || new Date().toISOString().slice(0, 7);
+
+  if (!/^\d{4}-\d{2}$/.test(month)) {
+    return errorResponse(res, "Format bulan tidak valid, gunakan YYYY-MM.", 400);
+  }
+
   try {
     const [rows] = await db.execute(
       "SELECT * FROM budgets WHERE household_id = ? AND period_month = ?",

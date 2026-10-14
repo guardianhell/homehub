@@ -720,7 +720,9 @@ const setNamedCookie = (name, val, days = 30) => {
   try {
     if (typeof document === 'undefined') return;
     const expires = new Date(Date.now() + days * 864e5).toUTCString();
-    document.cookie = `${name}=${encodeURIComponent(JSON.stringify(val))}; expires=${expires}; path=/; SameSite=Lax`;
+    const isSecure = typeof window !== 'undefined' && window.location.protocol === 'https:';
+    const secureFlag = isSecure ? '; Secure' : '';
+    document.cookie = `${name}=${encodeURIComponent(JSON.stringify(val))}; expires=${expires}; path=/; SameSite=Lax${secureFlag}`;
   } catch (e) {
     console.warn(`Cookie set error for ${name}:`, e);
   }
@@ -736,7 +738,9 @@ const setCrossPortCookie = (limits) => {
       )
     };
     const expires = new Date(Date.now() + 365 * 864e5).toUTCString();
-    document.cookie = `homehub_feature_limits=${encodeURIComponent(JSON.stringify(serializable))}; expires=${expires}; path=/; SameSite=Lax`;
+    const isSecure = typeof window !== 'undefined' && window.location.protocol === 'https:';
+    const secureFlag = isSecure ? '; Secure' : '';
+    document.cookie = `homehub_feature_limits=${encodeURIComponent(JSON.stringify(serializable))}; expires=${expires}; path=/; SameSite=Lax${secureFlag}`;
   } catch (e) {
     console.warn('Cookie set error:', e);
   }

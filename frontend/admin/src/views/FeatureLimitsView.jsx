@@ -112,10 +112,19 @@ export default function FeatureLimitsView({
 }) {
   const canManageLimits = hasPermission(currentRole.id, 'manage_limits');
 
+  // Safe clone preserving Infinity values (H-17)
+  const cloneFeatureLimits = (source) => {
+    if (!source) return { FREE: {}, PRO: {} };
+    return {
+      FREE: { ...(source.FREE || {}) },
+      PRO: { ...(source.PRO || {}) },
+    };
+  };
+
   // Form State
   const [formData, setFormData] = useState(() => {
     const base = currentLimits || DEFAULT_FEATURE_LIMITS;
-    return JSON.parse(JSON.stringify(base));
+    return cloneFeatureLimits(base);
   });
 
   const [notification, setNotification] = useState(null);
@@ -124,7 +133,7 @@ export default function FeatureLimitsView({
   // Sync when currentLimits changes from parent
   useEffect(() => {
     if (currentLimits) {
-      setFormData(JSON.parse(JSON.stringify(currentLimits)));
+      setFormData(cloneFeatureLimits(currentLimits));
     }
   }, [currentLimits]);
 

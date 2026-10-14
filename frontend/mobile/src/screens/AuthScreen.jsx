@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { STRINGS } from '../locales/strings';
 import api from '../services/api';
+import { safeSet } from '../utils/storage';
 
 export default function AuthScreen({ onLoginSuccess, lang = 'id' }) {
   const strings = STRINGS[lang] || STRINGS.id;
@@ -37,6 +38,9 @@ export default function AuthScreen({ onLoginSuccess, lang = 'id' }) {
           household_name: householdName.trim() || 'Rumah Utama Keluarga',
         });
         const data = res.data?.data || res.data;
+        if (data?.token) {
+          await safeSet('homehub_token', data.token);
+        }
         onLoginSuccess(data.user, data.household, data.households || [data.household]);
       } else {
         const res = await api.post('/auth/login', {
@@ -44,6 +48,9 @@ export default function AuthScreen({ onLoginSuccess, lang = 'id' }) {
           password,
         });
         const data = res.data?.data || res.data;
+        if (data?.token) {
+          await safeSet('homehub_token', data.token);
+        }
         onLoginSuccess(
           data.user,
           data.activeHousehold || data.households?.[0],
@@ -68,24 +75,12 @@ export default function AuthScreen({ onLoginSuccess, lang = 'id' }) {
         return;
       }
 
-      // Fallback Demo Login if user explicitly uses demo credentials while offline
-      if (email.includes('tebet') || email.includes('budi') || password === 'demo123') {
-        onLoginSuccess(
-          { id: 'u_demo', name: 'Budi Santoso', email },
-          { id: 'tebet_free', name: 'Rumah Utama Keluarga', tier: 'FREE', role: 'OWNER' },
-          [
-            { id: 'tebet_free', name: 'Rumah Utama Keluarga', tier: 'FREE', role: 'OWNER' },
-            { id: 'villa_pro', name: 'Villa Puncak Indah', tier: 'PRO', role: 'OWNER' },
-          ]
-        );
-      } else {
-        Alert.alert(
-          lang === 'id' ? 'Koneksi Gagal' : 'Connection Failed',
-          lang === 'id'
-            ? 'Tidak dapat terhubung ke backend. Silakan pastikan server backend berjalan atau gunakan tombol Masuk sebagai Demo.'
-            : 'Cannot connect to backend. Please ensure server is running or use Quick Demo.'
-        );
-      }
+      Alert.alert(
+        lang === 'id' ? 'Koneksi Gagal' : 'Connection Failed',
+        lang === 'id'
+          ? 'Tidak dapat terhubung ke backend. Silakan pastikan server backend berjalan.'
+          : 'Cannot connect to backend. Please ensure server is running.'
+      );
     } finally {
       setIsLoading(false);
     }

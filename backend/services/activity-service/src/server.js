@@ -10,6 +10,7 @@ const {
 } = require("../../../shared/src/utils/response");
 const { validate } = require("../../../shared/src/middleware/validate");
 const { authenticate } = require("../../../shared/src/middleware/auth");
+const { verifyQuota } = require("../../../shared/src/middleware/quotaGuard");
 
 const app = express();
 const PORT = process.env.ACTIVITY_SERVICE_PORT || 8006;
@@ -20,6 +21,15 @@ app.use(authenticate);
 
 // Database connection pool for db_activity
 const db = createDbPool("db_activity");
+
+// Quota count helper for monthly activities (Free tier limit check)
+const countMonthlyActivities = async (householdId) => {
+  const [rows] = await db.execute(
+    "SELECT COUNT(*) as count FROM activities WHERE household_id = ? AND MONTH(start_datetime) = MONTH(CURRENT_DATE()) AND YEAR(start_datetime) = YEAR(CURRENT_DATE())",
+    [householdId],
+  );
+  return rows[0].count;
+};
 
 // =============================================================================
 // ZOD VALIDATION SCHEMAS
@@ -38,7 +48,10 @@ const createActivitySchema = z.object({
   recurrence_group_id: z.string().optional().nullable(),
   recurrence_rule: z.string().optional().nullable(),
   recurrence_summary: z.string().optional().nullable(),
-  activities: z.array(z.any()).optional(),
+  activities: z
+    .array(z.any())
+    .max(50, "Maksimal 50 aktivitas per batch")
+    .optional(),
   created_by_name: z.string().optional(),
 });
 
@@ -84,8 +97,12 @@ app.get("/", async (req, res) => {
   }
 });
 
-// POST / (Create activity or recurring bulk activities)
-app.post("/", validate(createActivitySchema), async (req, res) => {
+// POST / (Create activity or recurring bulk activities - Guarded by Free Quota)
+app.post(
+  "/",
+  verifyQuota("ACTIVITIES", countMonthlyActivities),
+  validate(createActivitySchema),
+  async (req, res) => {
   const connection = await db.getConnection();
 
   try {

@@ -21,14 +21,19 @@ import VouchersView from './views/VouchersView';
 import FeatureLimitsView from './views/FeatureLimitsView';
 import UtilityCategoriesView from './views/UtilityCategoriesView';
 import MasterCategoriesView from './views/MasterCategoriesView';
+import AdminLoginPage from './components/AdminLoginPage';
 
 // Services & RBAC
 import { adminData } from './services/adminData';
 import { ADMIN_ROLES } from './utils/rbac';
 
 export default function App() {
-  // Current active role for RBAC
-  const [currentRole, setCurrentRole] = useState(ADMIN_ROLES.SUPERADMIN);
+  // Admin authentication token & role
+  const [adminToken, setAdminToken] = useState(() => localStorage.getItem('homehub_admin_token') || null);
+  const [currentRole, setCurrentRole] = useState(() => {
+    const savedRoleId = localStorage.getItem('homehub_admin_role_id');
+    return ADMIN_ROLES[savedRoleId] || ADMIN_ROLES.SUPERADMIN;
+  });
   const [activeTab, setActiveTab] = useState('overview');
   const [headerSearchTerm, setHeaderSearchTerm] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -375,6 +380,25 @@ export default function App() {
     }
   }, [activeTab]);
 
+  const handleLogout = () => {
+    localStorage.removeItem('homehub_admin_token');
+    localStorage.removeItem('homehub_admin_user');
+    localStorage.removeItem('homehub_admin_role_id');
+    setAdminToken(null);
+  };
+
+  if (!adminToken) {
+    return (
+      <AdminLoginPage
+        onLoginSuccess={(token, user, role) => {
+          setAdminToken(token);
+          setCurrentRole(role);
+          reloadData();
+        }}
+      />
+    );
+  }
+
   return (
     <div className="flex h-screen bg-slate-950 text-slate-100 font-sans antialiased overflow-hidden">
       
@@ -409,6 +433,7 @@ export default function App() {
           pageTitle={pageMeta.title}
           pageSubtitle={pageMeta.subtitle}
           onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          onLogout={handleLogout}
         />
 
         {/* Scrollable View Container */}
@@ -430,6 +455,7 @@ export default function App() {
             <MembersView
               members={members}
               tenants={tenants}
+              searchTerm={headerSearchTerm}
               onSelectMember={setSelectedMemberForDetail}
               onOpenActivatePro={handleOpenActivatePro}
               onToggleStatus={handleToggleUserStatus}
@@ -441,6 +467,7 @@ export default function App() {
             <SubscriptionsView
               subscriptions={subscriptions}
               stats={stats}
+              searchTerm={headerSearchTerm}
               onOpenActivatePro={handleOpenActivatePro}
               currentRole={currentRole}
             />
@@ -451,6 +478,7 @@ export default function App() {
               vouchers={vouchers}
               members={members}
               tenants={tenants}
+              searchTerm={headerSearchTerm}
               onOpenCreateVoucher={() => setIsCreateVoucherModalOpen(true)}
               onSelectVoucher={(v) => setSelectedVoucherForDetail(v)}
               onToggleStatus={handleToggleVoucherStatus}
@@ -483,6 +511,7 @@ export default function App() {
           {activeTab === 'tenants' && (
             <TenantsView
               tenants={tenants}
+              searchTerm={headerSearchTerm}
               onSelectTenant={setSelectedTenantForDetail}
               onOpenActivatePro={handleOpenActivatePro}
               onDowngradeTenant={handleDowngradeTenant}
@@ -515,6 +544,7 @@ export default function App() {
           {activeTab === 'audit_logs' && (
             <AuditLogsView
               auditLogs={auditLogs}
+              searchTerm={headerSearchTerm}
               currentRole={currentRole}
             />
           )}

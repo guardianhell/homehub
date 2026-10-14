@@ -5,7 +5,6 @@ const { errorResponse } = require("../utils/response");
 
 const JWT_SECRET =
   process.env.JWT_SECRET || "supersecret_jwt_key_homehub_2026_dev_mode";
-const FALLBACK_SECRET = "homehub-super-secret-key-change-in-production";
 
 /**
  * Authentication Middleware
@@ -45,8 +44,8 @@ const authenticate = (req, res, next) => {
 
   const token = authHeader.split(" ")[1];
 
-  // Demo Token Bypass for Pair Testing / Instant Mode
-  if (token.startsWith("demo_")) {
+  // Demo Token Bypass is only permitted in isolated test runner
+  if (process.env.NODE_ENV === "test" && token.startsWith("demo_")) {
     const isPro = token.includes("pro");
     req.user = {
       id: isPro ? "u-2" : "u-1",
@@ -61,19 +60,7 @@ const authenticate = (req, res, next) => {
   }
 
   try {
-    let decoded;
-    try {
-      decoded = jwt.verify(token, JWT_SECRET);
-    } catch (verifyErr) {
-      if (verifyErr.name === "TokenExpiredError") {
-        throw verifyErr;
-      }
-      if (JWT_SECRET !== FALLBACK_SECRET) {
-        decoded = jwt.verify(token, FALLBACK_SECRET);
-      } else {
-        throw verifyErr;
-      }
-    }
+    const decoded = jwt.verify(token, JWT_SECRET);
     req.user = {
       id: decoded.userId,
       email: decoded.email,
@@ -113,8 +100,27 @@ const requireRole = (allowedRoles = ["OWNER", "ADMIN"]) => {
   };
 };
 
+/**
+ * Admin Access Guard
+ */
+const requireAdmin = (allowedRoles = ["SUPERADMIN", "HELPDESK", "FINANCE", "AUDITOR", "ADMIN"]) => {
+  return (req, res, next) => {
+    if (!req.user || !allowedRoles.includes(req.user.role)) {
+      return errorResponse(
+        res,
+        "Akses ditolak: Memerlukan hak akses administrator.",
+        403,
+        null,
+        "ERR_FORBIDDEN",
+      );
+    }
+    next();
+  };
+};
+
 module.exports = {
   authenticate,
   requireRole,
+  requireAdmin,
   JWT_SECRET,
 };

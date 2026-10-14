@@ -35,22 +35,7 @@ export default function LoginPage({ onLoginSuccess, onSwitchToRegister, sessionE
         return;
       }
     } catch (err) {
-      console.warn('Backend offline or login failed, evaluating fallback demo...', err);
-      // Fallback Demo Login handler if backend microservice is not yet running
-      if (email.includes('tebet') || email.includes('budi') || password === 'demo123') {
-        const demoUser = { id: 'u-1', name: 'Budi Santoso', email, preferred_language: 'id' };
-        const demoHousehold = { id: 'tebet_free', name: 'Rumah Tinggal - Tebet', tier: 'FREE', role: 'OWNER' };
-        const demoHouseholds = [
-          demoHousehold,
-          { id: 'villa_pro', name: 'Villa Puncak', tier: 'PRO', role: 'OWNER' }
-        ];
-        safeSet('homehub_token', 'demo_free_token');
-        safeSetJSON('homehub_user', demoUser);
-        safeSet('homehub_active_household_id', demoHousehold.id);
-        safeSetJSON('homehub_households', demoHouseholds);
-        onLoginSuccess(demoUser, demoHousehold, demoHouseholds);
-        return;
-      }
+      console.error('Login request failed:', err);
       // 1. Invalid credentials from backend (HTTP 401 ERR_INVALID_CREDENTIALS)
       if (
         err.errorCode === 'ERR_INVALID_CREDENTIALS' ||

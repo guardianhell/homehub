@@ -1,0 +1,261 @@
+version: "3.8"
+
+networks:
+  homehub-net:
+    driver: bridge
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+
+services:
+  # =============================================================================
+  # 1. DATABASE & CACHE LAYER
+  # =============================================================================
+  mysql:
+    image: mysql:8.0
+    container_name: homehub-mysql
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_USER: ${MYSQL_USER:-homehub_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-homehub_secret}
+    ports:
+      - "127.0.0.1:3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/init:/docker-entrypoint-initdb.d
+    networks:
+      - homehub-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-rootpassword}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: homehub-redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redispassword}
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - homehub-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redispassword}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # =============================================================================
+  # 2. MICROSERVICES BACKEND
+  # =============================================================================
+  auth-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+      args:
+        SERVICE_DIR: backend/services/auth-service
+    container_name: homehub-auth-service
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 8001
+      AUTH_SERVICE_PORT: 8001
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: ${MYSQL_USER:-homehub_user}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-homehub_secret}
+      JWT_SECRET: ${JWT_SECRET}
+      PAYMENT_WEBHOOK_SECRET: ${PAYMENT_WEBHOOK_SECRET}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - homehub-net
+
+  utility-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+      args:
+        SERVICE_DIR: backend/services/utility-service
+    container_name: homehub-utility-service
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 8002
+      UTILITY_SERVICE_PORT: 8002
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: ${MYSQL_USER:-homehub_user}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-homehub_secret}
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - homehub-net
+
+  asset-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+      args:
+        SERVICE_DIR: backend/services/asset-service
+    container_name: homehub-asset-service
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 8003
+      ASSET_SERVICE_PORT: 8003
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: ${MYSQL_USER:-homehub_user}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-homehub_secret}
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - homehub-net
+
+  grocery-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+      args:
+        SERVICE_DIR: backend/services/grocery-service
+    container_name: homehub-grocery-service
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 8004
+      GROCERY_SERVICE_PORT: 8004
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: ${MYSQL_USER:-homehub_user}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-homehub_secret}
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - homehub-net
+
+  finance-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+      args:
+        SERVICE_DIR: backend/services/finance-service
+    container_name: homehub-finance-service
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 8005
+      FINANCE_SERVICE_PORT: 8005
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: ${MYSQL_USER:-homehub_user}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-homehub_secret}
+      JWT_SECRET: ${JWT_SECRET}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - homehub-net
+
+  activity-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+      args:
+        SERVICE_DIR: backend/services/activity-service
+    container_name: homehub-activity-service
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 8006
+      ACTIVITY_SERVICE_PORT: 8006
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: ${MYSQL_USER:-homehub_user}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-homehub_secret}
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - homehub-net
+
+  # =============================================================================
+  # 3. API GATEWAY
+  # =============================================================================
+  api-gateway:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+      args:
+        SERVICE_DIR: backend/api-gateway
+    container_name: homehub-api-gateway
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      GATEWAY_PORT: 8000
+      JWT_SECRET: ${JWT_SECRET}
+      AUTH_SERVICE_URL: http://auth-service:8001
+      UTILITY_SERVICE_URL: http://utility-service:8002
+      ASSET_SERVICE_URL: http://asset-service:8003
+      GROCERY_SERVICE_URL: http://grocery-service:8004
+      FINANCE_SERVICE_URL: http://finance-service:8005
+      ACTIVITY_SERVICE_URL: http://activity-service:8006
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
+    depends_on:
+      - auth-service
+      - utility-service
+      - asset-service
+      - grocery-service
+      - finance-service
+      - activity-service
+    networks:
+      - homehub-net
+
+  # =============================================================================
+  # 4. FRONTEND REVERSE PROXY & STATIC APPS (Web & Admin)
+  # =============================================================================
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: homehub-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"       # Web Portal (Family)
+      - "8080:8080"   # Admin Portal (Backoffice)
+    depends_on:
+      - api-gateway
+    networks:
+      - homehub-net
+
+  # =============================================================================
+  # 5. CLOUDFLARE TUNNEL (Zero Trust / Ingress from Internet)
+  # =============================================================================
+  # Run this service to securely expose HomeHub through your domain without port forwarding.
+  # Enable by setting CLOUDFLARE_TUNNEL_TOKEN in your .env file.
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: homehub-cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN:-}
+    depends_on:
+      - frontend
+    networks:
+      - homehub-net

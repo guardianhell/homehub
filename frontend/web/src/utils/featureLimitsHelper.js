@@ -196,14 +196,10 @@ export function useFeatureLimits(apiInstance) {
     };
     window.addEventListener('storage', handleStorage);
 
-    // 4. Polling interval (1.5 seconds) for instant reactivity without waiting for click
-    const interval = setInterval(refresh, 1500);
-
     return () => {
       window.removeEventListener('focus', handleFocus);
       window.removeEventListener('homehub_limits_updated', handleUpdate);
       window.removeEventListener('storage', handleStorage);
-      clearInterval(interval);
     };
   }, [refresh]);
 

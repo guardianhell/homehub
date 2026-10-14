@@ -249,13 +249,21 @@ export function generateRecurringOccurrences(
       curr.setDate(curr.getDate() + 1);
     }
   } else if (recurrence_pattern === "MONTHLY") {
-    let curr = new Date(startDate);
+    const targetDay = startDate.getDate();
+    let monthOffset = 0;
 
-    while (curr <= endDateLimit && occurrences.length < 60) {
-      const itemStart = new Date(curr);
-      itemStart.setHours(startHour, startMinute, 0, 0);
+    while (occurrences.length < 60) {
+      const totalMonth = startDate.getMonth() + monthOffset;
+      const targetYear = startDate.getFullYear() + Math.floor(totalMonth / 12);
+      const targetMonth = totalMonth % 12;
+      const daysInMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+      const clampedDay = Math.min(targetDay, daysInMonth);
 
-      if (itemStart >= startDate && itemStart <= endDateLimit) {
+      const itemStart = new Date(targetYear, targetMonth, clampedDay, startHour, startMinute, 0, 0);
+
+      if (itemStart > endDateLimit) break;
+
+      if (itemStart >= startDate) {
         let itemEndStr = null;
         if (durationMs > 0) {
           const itemEnd = new Date(itemStart.getTime() + durationMs);
@@ -274,8 +282,7 @@ export function generateRecurringOccurrences(
         });
       }
 
-      // Move to next month on the same day
-      curr.setMonth(curr.getMonth() + 1);
+      monthOffset++;
     }
   }
 

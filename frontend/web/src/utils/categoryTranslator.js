@@ -261,31 +261,7 @@ export async function autoTranslateCategory(text) {
     return DICTIONARY_PHRASES[lower];
   }
 
-  // 2. Try online Google Translate endpoint if in browser
-  try {
-    if (typeof window !== 'undefined' && typeof window.fetch === 'function') {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2000);
-
-      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=id&tl=en&dt=t&q=${encodeURIComponent(clean)}`;
-      const res = await fetch(url, { signal: controller.signal });
-      clearTimeout(timeoutId);
-
-      if (res.ok) {
-        const json = await res.json();
-        if (Array.isArray(json) && json[0] && json[0][0] && json[0][0][0]) {
-          const trans = json[0][0][0].trim();
-          if (trans && trans.toLowerCase() !== lower) {
-            return toTitleCase(trans);
-          }
-        }
-      }
-    }
-  } catch (err) {
-    // Offline / timeout / CORS fallback to dictionary
-  }
-
-  // 3. Smart Word-by-word token replacement fallback
+  // 2. Local dictionary token replacement fallback
   const words = clean.split(/\s+/);
   const translatedWords = words.map(w => {
     const wLower = w.toLowerCase().replace(/[^a-z0-9]/g, '');

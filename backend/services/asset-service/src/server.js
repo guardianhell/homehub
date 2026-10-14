@@ -242,6 +242,14 @@ app.post("/:id/schedules", validate(createScheduleSchema), async (req, res) => {
   } = req.body;
 
   try {
+    const [assetExists] = await db.execute(
+      "SELECT id FROM assets WHERE id = ? AND household_id = ?",
+      [assetId, req.household.id],
+    );
+    if (assetExists.length === 0) {
+      return errorResponse(res, "Aset tidak ditemukan atau tidak memiliki akses.", 404);
+    }
+
     await db.execute(
       `INSERT INTO maintenance_schedules 
        (id, asset_id, title, frequency_type, frequency_value, frequency_months, frequency_km, next_due_date, next_due_odometer, is_active)
@@ -288,6 +296,14 @@ app.post("/:id/logs", validate(createLogSchema), async (req, res) => {
   } = req.body;
 
   try {
+    const [assetExists] = await db.execute(
+      "SELECT id FROM assets WHERE id = ? AND household_id = ?",
+      [assetId, req.household.id],
+    );
+    if (assetExists.length === 0) {
+      return errorResponse(res, "Aset tidak ditemukan atau tidak memiliki akses.", 404);
+    }
+
     await db.execute(
       `INSERT INTO maintenance_logs 
        (id, asset_id, household_id, performed_date, vendor_name, vendor_phone, cost, current_odometer, notes, receipt_url)
@@ -323,6 +339,14 @@ app.delete("/:id/schedules/:scheduleId", async (req, res) => {
   const { id: assetId, scheduleId } = req.params;
 
   try {
+    const [assetExists] = await db.execute(
+      "SELECT id FROM assets WHERE id = ? AND household_id = ?",
+      [assetId, req.household.id],
+    );
+    if (assetExists.length === 0) {
+      return errorResponse(res, "Aset tidak ditemukan atau tidak memiliki akses.", 404);
+    }
+
     const [result] = await db.execute(
       "DELETE FROM maintenance_schedules WHERE id = ? AND asset_id = ?",
       [scheduleId, assetId],
@@ -348,6 +372,14 @@ app.delete("/:id/logs/:logId", async (req, res) => {
   const { id: assetId, logId } = req.params;
 
   try {
+    const [assetExists] = await db.execute(
+      "SELECT id FROM assets WHERE id = ? AND household_id = ?",
+      [assetId, req.household.id],
+    );
+    if (assetExists.length === 0) {
+      return errorResponse(res, "Aset tidak ditemukan atau tidak memiliki akses.", 404);
+    }
+
     const [result] = await db.execute(
       "DELETE FROM maintenance_logs WHERE id = ? AND asset_id = ?",
       [logId, assetId],

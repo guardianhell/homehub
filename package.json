@@ -11,9 +11,12 @@
     "frontend/admin"
   ],
   "scripts": {
-    "db:up": "docker-compose -f database/docker-compose.yml up -d",
-    "db:down": "docker-compose -f database/docker-compose.yml down",
-    "db:logs": "docker-compose -f database/docker-compose.yml logs -f",
+    "db:up": "docker-compose up -d",
+    "db:down": "docker-compose down",
+    "db:logs": "docker-compose logs -f",
+    "prod:up": "docker-compose -f docker-compose.prod.yml up -d --build",
+    "prod:down": "docker-compose -f docker-compose.prod.yml down",
+    "prod:logs": "docker-compose -f docker-compose.prod.yml logs -f",
     "db:dump": "node scripts/db-dump.js",
     "db:restore": "node scripts/db-restore.js",
     "install:all": "npm install && cd backend/shared && npm install && cd ../api-gateway && npm install && cd ../services/auth-service && npm install && cd ../utility-service && npm install && cd ../asset-service && npm install && cd ../grocery-service && npm install && cd ../finance-service && npm install && cd ../activity-service && npm install",

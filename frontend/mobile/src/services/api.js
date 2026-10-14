@@ -1,8 +1,11 @@
 import axios from "axios";
 import { safeGet } from "../utils/storage";
 
-// Default LAN IP for physical phone testing (same Wi-Fi/Hotspot)
-export const API_BASE_URL = 'http://192.168.1.123:8000/api/v1';
+// Configurable API URL via environment with local fallback (H-16)
+export const API_BASE_URL =
+  process.env.EXPO_PUBLIC_API_URL ||
+  (typeof process !== "undefined" && process.env?.REACT_NATIVE_API_URL) ||
+  "http://localhost:8000/api/v1";
 
 const api = axios.create({
   baseURL: API_BASE_URL,

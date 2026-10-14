@@ -1,4 +1,4 @@
-const { spawn } = require('child_process');
+const { spawn, execSync } = require('child_process');
 const path = require('path');
 
 const SERVICES = [
@@ -21,6 +21,7 @@ SERVICES.forEach((service) => {
   const proc = spawn('npm', ['run', 'dev'], {
     cwd: serviceDir,
     shell: true,
+    detached: process.platform !== 'win32',
     env: { ...process.env, PORT: service.port },
   });
 
@@ -45,15 +46,29 @@ SERVICES.forEach((service) => {
   processes.push(proc);
 });
 
+let isCleaningUp = false;
 const cleanup = () => {
+  if (isCleaningUp) return;
+  isCleaningUp = true;
   console.log('\n🛑 Menghentikan seluruh backend microservices...');
   processes.forEach((proc) => {
+    if (!proc || !proc.pid) return;
     try {
-      proc.kill('SIGINT');
-    } catch (e) {}
+      if (process.platform === 'win32') {
+        execSync(`taskkill /pid ${proc.pid} /T /F`, { stdio: 'ignore' });
+      } else {
+        // Kill whole process group to prevent orphan/zombie node processes holding ports
+        process.kill(-proc.pid, 'SIGTERM');
+      }
+    } catch (e) {
+      try {
+        proc.kill('SIGTERM');
+      } catch (_) {}
+    }
   });
-  process.exit();
+  setTimeout(() => process.exit(0), 500);
 };
 
 process.on('SIGINT', cleanup);
 process.on('SIGTERM', cleanup);
+process.on('exit', cleanup);

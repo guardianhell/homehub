@@ -319,15 +319,21 @@ export default function PaymentModal({
     }
   };
 
-  // Simulate Payment Confirmation (Sandbox Trigger)
+  // Verify Payment Confirmation with Server
   const handleSimulatePaymentSuccess = async () => {
     setIsVerifying(true);
     try {
-      if (orderData?.order_id) {
-        await api.post(`/auth/households/${household.id}/subscriptions/orders/${orderData.order_id}/confirm`);
+      if (!orderData?.order_id) {
+        throw new Error('ID Pemesanan tidak ditemukan.');
+      }
+      const res = await api.post(`/auth/households/${household.id}/subscriptions/orders/${orderData.order_id}/confirm`);
+      if (res.data?.success === false) {
+        throw new Error(res.data?.message || 'Konfirmasi pembayaran ditolak oleh server.');
       }
     } catch (e) {
-      console.warn('Confirm endpoint error, applying local PRO upgrade:', e);
+      setIsVerifying(false);
+      alert('Gagal memverifikasi pembayaran dengan backend: ' + (e.response?.data?.message || e.message));
+      return;
     }
 
     // Update household status locally
@@ -826,29 +832,31 @@ export default function PaymentModal({
               )}
 
               {/* Interactive Sandbox Test Simulation (Instant payment test for developer/user) */}
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 text-left space-y-2">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900">
-                  <span>⚡</span>
-                  <span>Mode Pengujian & Simulasi Instan:</span>
+              {import.meta.env.DEV && (
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 text-left space-y-2">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900">
+                    <span>⚡</span>
+                    <span>Mode Pengujian & Simulasi Instan (Dev Mode):</span>
+                  </div>
+                  <p className="text-[11px] text-amber-800">
+                    Untuk menguji verifikasi pembayaran di lingkungan lokal, klik tombol di bawah untuk meminta verifikasi backend:
+                  </p>
+                  <button
+                    type="button"
+                    disabled={isVerifying}
+                    onClick={handleSimulatePaymentSuccess}
+                    className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-black text-xs shadow-md transition cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    {isVerifying ? (
+                      <span>Memverifikasi Pembayaran ke Server...</span>
+                    ) : (
+                      <>
+                        <span>✓ Minta Konfirmasi Pembayaran Server ({orderData.payment_method})</span>
+                      </>
+                    )}
+                  </button>
                 </div>
-                <p className="text-[11px] text-amber-800">
-                  Untuk menguji verifikasi pembayaran secara langsung tanpa perlu potong saldo asli, klik tombol di bawah untuk menyimulasikan konfirmasi pembayaran sukses:
-                </p>
-                <button
-                  type="button"
-                  disabled={isVerifying}
-                  onClick={handleSimulatePaymentSuccess}
-                  className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-black text-xs shadow-md transition cursor-pointer flex items-center justify-center gap-2"
-                >
-                  {isVerifying ? (
-                    <span>Memverifikasi Pembayaran...</span>
-                  ) : (
-                    <>
-                      <span>✓ Simulasikan Pembayaran Berhasil ({orderData.payment_method})</span>
-                    </>
-                  )}
-                </button>
-              </div>
+              )}
 
               {/* Back button */}
               <div className="pt-2 flex gap-3">

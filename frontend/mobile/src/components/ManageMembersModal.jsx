@@ -109,22 +109,28 @@ export default function ManageMembersModal({
         newMember.id = data.id;
         newMember.user_id = data.user_id || data.userId || newMember.user_id;
       }
+
+      if (onAddMember) onAddMember(newMember);
+      setName('');
+      setEmail('');
+      setRole('MEMBER');
+      setActiveTab('list');
+
+      Alert.alert(
+        lang === 'id' ? 'Berhasil' : 'Success',
+        t.addSuccess || 'Anggota baru berhasil ditambahkan!'
+      );
     } catch (err) {
-      console.warn('API add member offline fallback:', err.message);
+      console.warn('API add member error:', err.message);
+      const msg =
+        err.response?.data?.message ||
+        (lang === 'id'
+          ? 'Gagal menambahkan anggota. Periksa koneksi dan izin Anda.'
+          : 'Failed to add member. Check your connection and permissions.');
+      Alert.alert(lang === 'id' ? 'Gagal' : 'Error', msg);
     } finally {
       setIsSubmitting(false);
     }
-
-    if (onAddMember) onAddMember(newMember);
-    setName('');
-    setEmail('');
-    setRole('MEMBER');
-    setActiveTab('list');
-
-    Alert.alert(
-      lang === 'id' ? 'Berhasil' : 'Success',
-      t.addSuccess || 'Anggota baru berhasil ditambahkan!'
-    );
   };
 
   const handleRemove = (memberId, memberName) => {
@@ -144,10 +150,16 @@ export default function ManageMembersModal({
               await api.delete(
                 `/auth/households/${householdId}/members/${memberId}`
               );
+              if (onRemoveMember) onRemoveMember(memberId);
             } catch (err) {
-              console.warn('API remove member offline fallback:', err.message);
+              console.warn('API remove member error:', err.message);
+              const msg =
+                err.response?.data?.message ||
+                (lang === 'id'
+                  ? 'Gagal mengeluarkan anggota. Periksa koneksi dan izin Anda.'
+                  : 'Failed to remove member. Check your connection and permissions.');
+              Alert.alert(lang === 'id' ? 'Gagal' : 'Error', msg);
             }
-            if (onRemoveMember) onRemoveMember(memberId);
           },
         },
       ]

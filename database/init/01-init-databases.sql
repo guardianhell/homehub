@@ -10,13 +10,13 @@ CREATE DATABASE IF NOT EXISTS db_grocery CHARACTER SET utf8mb4 COLLATE utf8mb4_u
 CREATE DATABASE IF NOT EXISTS db_finance CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE DATABASE IF NOT EXISTS db_activity CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- Grant access to application user
-GRANT ALL PRIVILEGES ON db_family.* TO 'homehub_user'@'%';
-GRANT ALL PRIVILEGES ON db_utility.* TO 'homehub_user'@'%';
-GRANT ALL PRIVILEGES ON db_asset.* TO 'homehub_user'@'%';
-GRANT ALL PRIVILEGES ON db_grocery.* TO 'homehub_user'@'%';
-GRANT ALL PRIVILEGES ON db_finance.* TO 'homehub_user'@'%';
-GRANT ALL PRIVILEGES ON db_activity.* TO 'homehub_user'@'%';
+-- Grant access to application user (Least Privilege principle)
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER ON db_family.* TO 'homehub_user'@'%';
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER ON db_utility.* TO 'homehub_user'@'%';
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER ON db_asset.* TO 'homehub_user'@'%';
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER ON db_grocery.* TO 'homehub_user'@'%';
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER ON db_finance.* TO 'homehub_user'@'%';
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER ON db_activity.* TO 'homehub_user'@'%';
 FLUSH PRIVILEGES;
 
 -- =============================================================================
@@ -77,6 +77,143 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     FOREIGN KEY (household_id) REFERENCES households(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS utility_categories (
+    id VARCHAR(50) PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    name VARCHAR(100) NOT NULL,
+    name_en VARCHAR(100) NULL,
+    icon VARCHAR(50) NOT NULL DEFAULT '⚡',
+    icon_url VARCHAR(255) NULL,
+    color VARCHAR(50) NOT NULL DEFAULT 'blue',
+    providers JSON NULL,
+    is_default BOOLEAN NOT NULL DEFAULT FALSE,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_cat_code (code),
+    INDEX idx_cat_active (is_active)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS asset_categories (
+    id VARCHAR(50) PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    name VARCHAR(100) NOT NULL,
+    name_en VARCHAR(100) NULL,
+    icon VARCHAR(50) NOT NULL,
+    icon_url VARCHAR(255) NULL,
+    color VARCHAR(50) NOT NULL DEFAULT 'blue',
+    metadata JSON NULL,
+    is_default BOOLEAN NOT NULL DEFAULT FALSE,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_code (code),
+    INDEX idx_active (is_active)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS expense_categories (
+    id VARCHAR(50) PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    name VARCHAR(100) NOT NULL,
+    name_en VARCHAR(100) NULL,
+    icon VARCHAR(50) NOT NULL,
+    icon_url VARCHAR(255) NULL,
+    color VARCHAR(50) NOT NULL DEFAULT 'blue',
+    metadata JSON NULL,
+    is_default BOOLEAN NOT NULL DEFAULT FALSE,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_code (code),
+    INDEX idx_active (is_active)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS grocery_categories (
+    id VARCHAR(50) PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    name VARCHAR(100) NOT NULL,
+    name_en VARCHAR(100) NULL,
+    icon VARCHAR(50) NOT NULL,
+    icon_url VARCHAR(255) NULL,
+    color VARCHAR(50) NOT NULL DEFAULT 'blue',
+    metadata JSON NULL,
+    is_default BOOLEAN NOT NULL DEFAULT FALSE,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_code (code),
+    INDEX idx_active (is_active)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS activity_categories (
+    id VARCHAR(50) PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    name VARCHAR(100) NOT NULL,
+    name_en VARCHAR(100) NULL,
+    icon VARCHAR(50) NOT NULL,
+    icon_url VARCHAR(255) NULL,
+    color VARCHAR(50) NOT NULL DEFAULT 'blue',
+    metadata JSON NULL,
+    is_default BOOLEAN NOT NULL DEFAULT FALSE,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_code (code),
+    INDEX idx_active (is_active)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS vouchers (
+    id VARCHAR(50) PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    description VARCHAR(255) NULL,
+    discount_type ENUM('PERCENTAGE', 'FIXED_AMOUNT') NOT NULL DEFAULT 'PERCENTAGE',
+    discount_value DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+    target_plan ENUM('ALL', 'PRO_YEARLY', 'PRO_MONTHLY') NOT NULL DEFAULT 'ALL',
+    max_quota INT NOT NULL DEFAULT 10,
+    claimed_count INT NOT NULL DEFAULT 0,
+    status ENUM('ACTIVE', 'EXHAUSTED', 'EXPIRED', 'DISABLED') NOT NULL DEFAULT 'ACTIVE',
+    valid_until TIMESTAMP NOT NULL,
+    generated_by_name VARCHAR(100) NOT NULL DEFAULT 'Super Admin',
+    generated_by_role VARCHAR(50) NOT NULL DEFAULT 'SUPERADMIN',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_voucher_code (code),
+    INDEX idx_voucher_status (status)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS voucher_claims (
+    id VARCHAR(50) PRIMARY KEY,
+    voucher_id VARCHAR(50) NOT NULL,
+    user_id VARCHAR(50) NOT NULL,
+    user_name VARCHAR(100) NULL,
+    user_email VARCHAR(150) NULL,
+    household_id VARCHAR(50) NOT NULL,
+    household_name VARCHAR(120) NULL,
+    applied_plan VARCHAR(50) NOT NULL,
+    original_price DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+    discount_amount DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+    final_price DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+    claimed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_claim_voucher (voucher_id),
+    INDEX idx_claim_user (user_id),
+    INDEX idx_claim_household (household_id)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id VARCHAR(50) PRIMARY KEY,
+    admin_name VARCHAR(100) NOT NULL,
+    admin_role VARCHAR(50) NOT NULL,
+    action VARCHAR(80) NOT NULL,
+    target_type VARCHAR(50) NOT NULL,
+    target_id VARCHAR(50) NOT NULL,
+    target_name VARCHAR(150) NOT NULL,
+    details TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_audit_action (action),
+    INDEX idx_audit_admin (admin_name),
+    INDEX idx_audit_created (created_at)
+) ENGINE=InnoDB;
+
 -- =============================================================================
 -- 2. DB_UTILITY (Bills & Utility Accounts)
 -- =============================================================================
@@ -85,7 +222,7 @@ USE db_utility;
 CREATE TABLE IF NOT EXISTS utility_accounts (
     id VARCHAR(36) PRIMARY KEY,
     household_id VARCHAR(36) NOT NULL,
-    category_code ENUM('ELECTRICITY', 'WATER', 'INTERNET', 'MAINTENANCE_IPL', 'GAS', 'OTHER') NOT NULL,
+    category_code VARCHAR(50) NOT NULL,
     provider_name VARCHAR(100) NOT NULL,
     customer_number VARCHAR(100) NOT NULL,
     account_name VARCHAR(120) NOT NULL,
@@ -187,8 +324,8 @@ CREATE TABLE IF NOT EXISTS shopping_items (
     category VARCHAR(60) NOT NULL DEFAULT 'Umum', -- 'Bumbu Dapur', 'Bahan Pokok', 'Kebersihan'
     quantity VARCHAR(50) NULL, -- '1 kg', '2 botol', '1 bungkus'
     stock_status ENUM('IN_STOCK', 'LOW_STOCK', 'OUT_OF_STOCK') NOT NULL DEFAULT 'OUT_OF_STOCK',
-    estimated_price DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
-    actual_price DECIMAL(10, 2) NULL DEFAULT NULL,
+    estimated_price DECIMAL(10, 2) NOT NULL DEFAULT 0.00 CHECK (estimated_price >= 0),
+    actual_price DECIMAL(10, 2) NULL DEFAULT NULL CHECK (actual_price IS NULL OR actual_price >= 0),
     is_bought BOOLEAN NOT NULL DEFAULT FALSE,
     bought_by_user_id VARCHAR(36) NULL,
     bought_at TIMESTAMP NULL,
@@ -238,7 +375,7 @@ CREATE TABLE IF NOT EXISTS activities (
     household_id VARCHAR(36) NOT NULL,
     created_by_user_id VARCHAR(36) NOT NULL,
     title VARCHAR(150) NOT NULL,
-    activity_type ENUM('COURSE_LES', 'VACATION', 'BIZTRIP', 'INVITATION', 'BIRTHDAY', 'ROUTINE', 'OTHER') NOT NULL,
+    activity_type VARCHAR(50) NOT NULL,
     start_datetime DATETIME NOT NULL,
     end_datetime DATETIME NULL,
     location VARCHAR(200) NULL,
@@ -283,6 +420,47 @@ INSERT INTO household_members (id, household_id, user_id, role) VALUES
 ('hm-02', 'hh-villa-02', 'usr-calvin-01', 'OWNER'),
 ('hm-03', 'hh-tebet-01', 'usr-siti-02', 'ADMIN'),
 ('hm-04', 'hh-tebet-01', 'usr-nathan-03', 'MEMBER');
+
+-- Master Categories Seed
+INSERT INTO utility_categories (id, code, name, name_en, icon, color, providers, is_default, is_active) VALUES
+('cat-elec', 'ELECTRICITY', 'Listrik & Daya', 'Electricity & Power', '⚡', 'amber', '["PLN Pascabayar", "PLN Prabayar (Token)"]', TRUE, TRUE),
+('cat-water', 'WATER', 'Air PDAM / Bersih', 'Clean Water / PDAM', '💧', 'blue', '["PDAM Tirtawening", "PAM Jaya", "Aetra Air"]', TRUE, TRUE),
+('cat-inet', 'INTERNET', 'Internet & WiFi Fiber', 'Internet & Fiber WiFi', '🌐', 'purple', '["IndiHome Fiber", "Biznet Home", "MyRepublic", "First Media"]', TRUE, TRUE),
+('cat-gas', 'GAS', 'Gas PGN & Tabung LPG', 'PGN Gas & LPG Tank', '🔥', 'orange', '["PGN GasKita", "Pertamina Bright Gas 12kg", "LPG 3kg"]', TRUE, TRUE),
+('cat-ipl', 'MAINTENANCE_IPL', 'Iuran Pengelola (IPL)', 'Building & Security Dues (IPL)', '🏢', 'emerald', '["Iuran IPL Pengelola", "Iuran Keamanan RT/RW", "Retribusi Kebersihan"]', TRUE, TRUE),
+('cat-other', 'OTHER', 'Lainnya / Tagihan Umum', 'Other / General Bills', '📄', 'slate', '["BPJS Kesehatan", "Asuransi Rumah", "Tagihan Lainnya"]', TRUE, TRUE);
+
+INSERT INTO asset_categories (id, code, name, name_en, icon, color, metadata, is_default, is_active) VALUES
+('cat-ast-elec', 'ELECTRONIC', 'Elektronik Rumah Tangga', 'Household Electronics', '❄️', 'emerald', '{"subcategories": ["AC", "Kulkas", "Smart TV", "Mesin Cuci", "Microwave", "Dispenser Air"]}', TRUE, TRUE),
+('cat-ast-veh', 'VEHICLE', 'Kendaraan Bermotor', 'Motor Vehicles', '🚗', 'blue', '{"has_odometer": true, "subcategories": ["Mobil", "Sepeda Motor", "Sepeda Listrik"]}', TRUE, TRUE),
+('cat-ast-furn', 'FURNITURE', 'Perabotan / Furnitur', 'Furniture & Fixtures', '🛋️', 'amber', '{"subcategories": ["Sofa & Kursi", "Meja Makan", "Tempat Tidur", "Lemari Pakaian", "Kitchen Set"]}', TRUE, TRUE),
+('cat-ast-prop', 'PROPERTY', 'Properti & Bangunan', 'Property & Buildings', '🏡', 'indigo', '{"subcategories": ["Rumah Utama", "Villa", "Ruko / Toko", "Tanah"]}', TRUE, TRUE),
+('cat-ast-jwl', 'JEWELRY', 'Perhiasan & Logam Mulia', 'Jewelry & Precious Metals', '💎', 'purple', '{"subcategories": ["Emas Batangan", "Cincin & Kalung", "Jam Tangan Mewah"]}', TRUE, TRUE),
+('cat-ast-oth', 'OTHER', 'Aset Lainnya', 'Other Assets', '📦', 'slate', '{"subcategories": ["Kamera & Lensa", "Sepeda Olahraga", "Peralatan Bengkel / Hobi"]}', TRUE, TRUE);
+
+INSERT INTO expense_categories (id, code, name, name_en, icon, color, metadata, is_default, is_active) VALUES
+('cat-exp-dpr', 'EXP_DAPUR', 'Kebutuhan Dapur & Bahan Pokok', 'Kitchen Supplies & Staple Food', '🍳', 'emerald', '{"budget": 1500000}', TRUE, TRUE),
+('cat-exp-bln', 'EXP_BULANAN', 'Belanja Bulanan & Supermarket', 'Monthly & Supermarket Shopping', '🛒', 'blue', '{"budget": 2500000}', TRUE, TRUE),
+('cat-exp-utl', 'EXP_UTILITAS', 'Tagihan & Utilitas (Listrik/Air/Wifi)', 'Bills & Utilities', '⚡', 'amber', '{"budget": 1200000}', TRUE, TRUE),
+('cat-exp-trn', 'EXP_TRANSPORT', 'Transportasi, Bensin & Tol', 'Transportation, Fuel & Toll', '🚗', 'orange', '{"budget": 1000000}', TRUE, TRUE),
+('cat-exp-pdd', 'EXP_PENDIDIKAN', 'Pendidikan & Les Anak', 'Education & Courses', '📚', 'rose', '{"budget": 1200000}', TRUE, TRUE),
+('cat-exp-med', 'EXP_KESEHATAN', 'Kesehatan, Obat & Medis', 'Healthcare & Medicines', '💊', 'teal', '{"budget": 500000}', TRUE, TRUE),
+('cat-exp-srv', 'EXP_SERVIS', 'Servis Kendaraan & Rumah', 'Vehicle & Home Maintenance', '🔧', 'purple', '{"budget": 800000}', TRUE, TRUE),
+('cat-exp-hbr', 'EXP_HIBURAN', 'Gaya Hidup, Kuliner & Hiburan', 'Lifestyle & Entertainment', '☕', 'cyan', '{"budget": 800000}', TRUE, TRUE),
+('cat-exp-inv', 'EXP_INVESTASI', 'Investasi & Tabungan', 'Investment & Savings', '📈', 'emerald', '{"budget": 2000000}', TRUE, TRUE),
+('cat-exp-dns', 'EXP_DONASI', 'Sosial & Zakat/Donasi', 'Social & Donations', '🤲', 'indigo', '{"budget": 500000}', TRUE, TRUE),
+('cat-exp-oth', 'EXP_LAINNYA', 'Lainnya', 'Others', '📦', 'slate', '{"budget": 300000}', TRUE, TRUE);
+
+INSERT INTO activity_categories (id, code, name, name_en, icon, color, metadata, is_default, is_active) VALUES
+('cat-act-les', 'COURSE_LES', 'Kursus / Les / Bimbel', 'Courses & Tutoring', '🎓', 'amber', '{"tag": "Les", "reminder": 30}', TRUE, TRUE),
+('cat-act-lib', 'VACATION', 'Liburan / Rekreasi Keluarga', 'Vacation & Family Recreation', '🌴', 'emerald', '{"tag": "Liburan", "reminder": 1440}', TRUE, TRUE),
+('cat-act-dns', 'BIZTRIP', 'Perjalanan Bisnis / Dinas', 'Business Trip', '💼', 'blue', '{"tag": "Dinas", "reminder": 120}', TRUE, TRUE),
+('cat-act-udg', 'INVITATION', 'Undangan / Hajatan', 'Invitation / Party', '✉️', 'purple', '{"tag": "Undangan", "reminder": 60}', TRUE, TRUE),
+('cat-act-ult', 'BIRTHDAY', 'Ulang Tahun / Perayaan', 'Birthday & Celebration', '🎂', 'pink', '{"tag": "Ulang Tahun", "reminder": 1440}', TRUE, TRUE),
+('cat-act-rtn', 'ROUTINE', 'Rutinitas / Ibadah', 'Routine & Worship', '⚡', 'indigo', '{"tag": "Rutinitas", "reminder": 15}', TRUE, TRUE),
+('cat-act-med', 'HEALTH_CHECK', 'Pemeriksaan Kesehatan / Dokter', 'Doctor & Health Checkup', '🩺', 'rose', '{"tag": "Kesehatan", "reminder": 60}', TRUE, TRUE),
+('cat-act-rpt', 'MEETING', 'Rapat RT/RW / Komunitas', 'Community & Neighborhood Meeting', '👥', 'teal', '{"tag": "Rapat", "reminder": 30}', TRUE, TRUE),
+('cat-act-oth', 'OTHER', 'Lainnya', 'Others', '📌', 'slate', '{"tag": "Agenda", "reminder": 30}', TRUE, TRUE);
 
 -- Utility Bills
 USE db_utility;

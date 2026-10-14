@@ -25,9 +25,16 @@ export default function TenantsView({
   onSelectTenant, 
   onOpenActivatePro, 
   onDowngradeTenant, 
-  currentRole 
+  currentRole,
+  searchTerm = ''
 }) {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(searchTerm);
+
+  React.useEffect(() => {
+    if (searchTerm !== undefined) {
+      setSearchQuery(searchTerm);
+    }
+  }, [searchTerm]);
   const [filterTier, setFilterTier] = useState('ALL'); // ALL, PRO, FREE
 
   const canEditTenants = hasPermission(currentRole.id, 'edit_tenants');

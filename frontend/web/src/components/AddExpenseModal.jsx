@@ -209,7 +209,8 @@ const loadTesseract = () => {
     }
     const script = document.createElement('script');
     script.id = 'tesseract-cdn-script';
-    script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+    script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+    script.crossOrigin = 'anonymous';
     script.async = true;
     script.onload = () => resolve(window.Tesseract);
     script.onerror = () => reject(new Error('Gagal memuat Tesseract'));
@@ -385,10 +386,9 @@ export default function AddExpenseModal({
     user_id: defaultMemberId
   });
 
-  // Google Vision / Gemini AI Configuration (Supports .env and localStorage)
-  const envApiKey = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_GOOGLE_VISION_API_KEY || '';
+  // Google Vision / Gemini AI Configuration (Client-side key is user-configurable; server proxy handles background OCR)
   const [googleApiKey, setGoogleApiKey] = useState(() => {
-    return envApiKey || localStorage.getItem('homehub_google_vision_key') || '';
+    return localStorage.getItem('homehub_google_vision_key') || '';
   });
   const [showAiConfig, setShowAiConfig] = useState(false);
 

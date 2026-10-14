@@ -58,7 +58,7 @@ export default function UtilityCategoriesView({
   const [formProviders, setFormProviders] = useState('');
   const [formError, setFormError] = useState('');
 
-  const canManage = hasPermission(currentRole.id, 'manage_vouchers') || currentRole.id === 'SUPERADMIN';
+  const canManage = hasPermission(currentRole.id, 'manage_categories') || currentRole.id === 'SUPERADMIN';
 
   // Open modal for new category
   const handleOpenCreate = () => {

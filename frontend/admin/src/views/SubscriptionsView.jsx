@@ -25,9 +25,16 @@ export default function SubscriptionsView({
   subscriptions, 
   stats, 
   onOpenActivatePro, 
-  currentRole 
+  currentRole,
+  searchTerm = ''
 }) {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(searchTerm);
+
+  React.useEffect(() => {
+    if (searchTerm !== undefined) {
+      setSearchQuery(searchTerm);
+    }
+  }, [searchTerm]);
   const [filterPlan, setFilterPlan] = useState('ALL'); // ALL, PRO_YEARLY, PRO_MONTHLY
   const [filterType, setFilterType] = useState('ALL'); // ALL, GATEWAY, MANUAL
   const [selectedInvoice, setSelectedInvoice] = useState(null);

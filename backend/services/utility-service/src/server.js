@@ -188,6 +188,18 @@ app.post("/bills", validate(createBillSchema), async (req, res) => {
   const billId = uuidv4();
 
   try {
+    const [accounts] = await db.execute(
+      "SELECT id FROM utility_accounts WHERE id = ? AND household_id = ?",
+      [account_id, req.household.id],
+    );
+    if (accounts.length === 0) {
+      return errorResponse(
+        res,
+        "Akun tagihan tidak ditemukan atau tidak memiliki akses.",
+        404,
+      );
+    }
+
     await db.execute(
       `INSERT INTO utility_bills (id, household_id, account_id, billing_period, due_date, amount, status, notes)
        VALUES (?, ?, ?, ?, ?, ?, 'UNPAID', ?)`,

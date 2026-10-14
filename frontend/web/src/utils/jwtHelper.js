@@ -35,11 +35,13 @@ export function decodeJwtPayload(token) {
  */
 export function isJwtExpired(token) {
   if (!token) return true;
-  // Demo tokens without dots do not expire by default
-  if (!token.includes(".")) return false;
+  
+  // Valid JWT format must have exactly 3 parts separated by dots (header.payload.signature)
+  const parts = token.split(".");
+  if (parts.length !== 3) return true;
 
   const payload = decodeJwtPayload(token);
-  if (!payload || !payload.exp) return false;
+  if (!payload || !payload.exp) return true;
 
   // 'exp' is in seconds, Date.now() is in milliseconds
   return Date.now() >= payload.exp * 1000;

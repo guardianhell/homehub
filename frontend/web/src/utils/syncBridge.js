@@ -43,12 +43,18 @@ export function getCrossPortCookie(name) {
 }
 
 /**
- * Set cookie across localhost ports (SameSite=Lax, path=/)
+ * Set cookie across localhost ports (SameSite=Lax, path=/) with size guard (H-10)
  */
 export function setCrossPortCookie(name, data, days = 30) {
   try {
     if (typeof document === 'undefined') return;
     const jsonStr = JSON.stringify(data);
+    // Strict guard against HTTP 431 (Request Header Fields Too Large)
+    if (jsonStr.length > 512) {
+      // Expire / clear cookie to avoid HTTP 431 DoS
+      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax`;
+      return;
+    }
     const expires = new Date(Date.now() + days * 864e5).toUTCString();
     
     // Set for localhost domain and default path
@@ -161,8 +167,10 @@ export function broadcastLiveUserState({ user, households, activeHouseholdId }) 
       timestamp: Date.now()
     };
 
-    // Save to shared cross-port cookie
-    setCrossPortCookie(LIVE_STATE_COOKIE, liveState);
+    // Clear any oversized legacy cookie (H-10)
+    if (typeof document !== 'undefined') {
+      document.cookie = `${LIVE_STATE_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax`;
+    }
 
     // Save to localStorage as local mirror
     safeSetJSON(LIVE_STATE_COOKIE, liveState);

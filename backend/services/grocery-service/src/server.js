@@ -67,9 +67,26 @@ app.get("/", async (req, res) => {
   const { status, category } = req.query;
 
   try {
-    let query =
-      "SELECT * FROM shopping_items WHERE household_id = ? ORDER BY is_bought ASC, created_at DESC";
+    let query = "SELECT * FROM shopping_items WHERE household_id = ?";
     const params = [req.household.id];
+
+    if (status) {
+      if (status === "BOUGHT" || status === "true") {
+        query += " AND is_bought = TRUE";
+      } else if (status === "UNBOUGHT" || status === "false") {
+        query += " AND is_bought = FALSE";
+      } else {
+        query += " AND stock_status = ?";
+        params.push(status);
+      }
+    }
+
+    if (category) {
+      query += " AND category = ?";
+      params.push(category);
+    }
+
+    query += " ORDER BY is_bought ASC, created_at DESC";
 
     const [items] = await db.execute(query, params);
     return successResponse(res, items);
@@ -237,20 +254,20 @@ app.put("/:id", async (req, res) => {
       `UPDATE shopping_items 
        SET name = COALESCE(?, name),
            category = COALESCE(?, category),
-           quantity = ?,
+           quantity = COALESCE(?, quantity),
            stock_status = COALESCE(?, stock_status),
            estimated_price = COALESCE(?, estimated_price),
            actual_price = COALESCE(?, actual_price),
-           notes = ?
+           notes = COALESCE(?, notes)
        WHERE id = ? AND household_id = ?`,
       [
-        name || null,
-        category || null,
-        quantity || null,
-        stock_status || null,
+        name !== undefined ? name : null,
+        category !== undefined ? category : null,
+        quantity !== undefined ? quantity : null,
+        stock_status !== undefined ? stock_status : null,
         estimated_price !== undefined ? estimated_price : null,
         actual_price !== undefined ? actual_price : null,
-        notes || null,
+        notes !== undefined ? notes : null,
         itemId,
         req.household.id,
       ],

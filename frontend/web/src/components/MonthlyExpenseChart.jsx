@@ -20,8 +20,9 @@ export function getBaseMonths(isDemo = false, lang = 'id') {
   const names = lang === 'en' ? monthNamesEn : monthNamesId;
 
   const res = [];
-  const endYear = 2026;
-  const endMonth = 9; // Sep 2026
+  const now = new Date();
+  const endYear = now.getFullYear();
+  const endMonth = now.getMonth() + 1;
   for (let i = 5; i >= 0; i--) {
     let m = endMonth - i;
     let y = endYear;
@@ -246,8 +247,9 @@ export default function MonthlyExpenseChart({
           {/* Bars Plot Grid */}
           <div className="grid grid-cols-6 gap-2 sm:gap-4 h-full w-full items-end px-2 relative z-0">
             {chartData.map((item) => {
+              const currentMonthKey = new Date().toISOString().slice(0, 7);
               const heightPercent = getBarHeight(item.amount);
-              const isCurrent = item.month === '2026-09';
+              const isCurrent = item.month === currentMonthKey;
               const isOverBudget = item.amount > budgetLimit;
               const isHovered = hoveredMonth === item.month;
 
@@ -307,7 +309,8 @@ export default function MonthlyExpenseChart({
         {/* X-AXIS LABELS: Separated from plot area to prevent coordinate distortion */}
         <div className="grid grid-cols-6 gap-2 sm:gap-4 px-2 pt-3 border-t border-slate-100 mt-2">
           {chartData.map((item) => {
-            const isCurrent = item.month === '2026-09';
+            const currentMonthKey = new Date().toISOString().slice(0, 7);
+            const isCurrent = item.month === currentMonthKey;
             const isOverBudget = item.amount > budgetLimit;
 
             return (

@@ -21,8 +21,14 @@ import {
 import { hasPermission } from '../utils/rbac';
 import { adminData } from '../services/adminData';
 
-export default function AuditLogsView({ auditLogs, currentRole }) {
-  const [searchQuery, setSearchQuery] = useState('');
+export default function AuditLogsView({ auditLogs, currentRole, searchTerm = '' }) {
+  const [searchQuery, setSearchQuery] = useState(searchTerm);
+
+  useEffect(() => {
+    if (searchTerm !== undefined) {
+      setSearchQuery(searchTerm);
+    }
+  }, [searchTerm]);
   const [filterAction, setFilterAction] = useState('ALL');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -135,15 +141,22 @@ export default function AuditLogsView({ auditLogs, currentRole }) {
       alert('Akses Dibatasi: Role Anda tidak memiliki izin ekspor.');
       return;
     }
+    const sanitizeCSV = (val) => {
+      if (val == null) return '""';
+      let str = String(val);
+      if (/^[=+\-@\t\r]/.test(str)) str = "'" + str;
+      return `"${str.replace(/"/g, '""')}"`;
+    };
+
     const headers = ['Waktu', 'Nama Admin', 'Role Admin', 'Tindakan', 'Target ID', 'Target', 'Rincian & Alasan'];
     const rows = items.map(l => [
-      l.timestamp,
-      `"${l.admin_name}"`,
-      l.admin_role,
-      l.action,
-      l.target_id,
-      `"${l.target_name}"`,
-      `"${l.details}"`
+      sanitizeCSV(l.timestamp),
+      sanitizeCSV(l.admin_name),
+      sanitizeCSV(l.admin_role),
+      sanitizeCSV(l.action),
+      sanitizeCSV(l.target_id),
+      sanitizeCSV(l.target_name),
+      sanitizeCSV(l.details)
     ]);
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);

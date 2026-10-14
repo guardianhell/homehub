@@ -25,6 +25,8 @@ export const ADMIN_ROLES = {
       view_vouchers: true,
       manage_vouchers: true, // Generate voucher, atur kuota diskon & cetak
       manage_limits: true, // Mengatur batas kuota Free & PRO dinamis
+      view_categories: true,
+      manage_categories: true, // Kelola master kategori & utilitas
     }
   },
   HELPDESK: {
@@ -49,6 +51,8 @@ export const ADMIN_ROLES = {
       view_vouchers: true,
       manage_vouchers: false, // Read-only voucher check
       manage_limits: false,
+      view_categories: true,
+      manage_categories: false,
     }
   },
   FINANCE: {
@@ -73,6 +77,8 @@ export const ADMIN_ROLES = {
       view_vouchers: true,
       manage_vouchers: true, // Boleh terbitkan promo voucher diskon
       manage_limits: false,
+      view_categories: true,
+      manage_categories: false,
     }
   },
   MARKETING: {
@@ -97,6 +103,8 @@ export const ADMIN_ROLES = {
       view_vouchers: true,
       manage_vouchers: true, // Pembuat kampanye promosi voucher utama
       manage_limits: false,
+      view_categories: true,
+      manage_categories: false,
     }
   },
   CONTACT_CENTER: {
@@ -121,14 +129,17 @@ export const ADMIN_ROLES = {
       view_vouchers: true,
       manage_vouchers: false, // Read-only check
       manage_limits: false,
+      view_categories: true,
+      manage_categories: false,
     }
   }
 };
 
 /**
- * Check if a role has a specific permission
+ * Check if a role has a specific permission (Fail-Secure)
  */
 export function hasPermission(roleId, permissionKey) {
-  const role = ADMIN_ROLES[roleId] || ADMIN_ROLES.SUPERADMIN;
-  return Boolean(role.permissions && role.permissions[permissionKey]);
+  const role = ADMIN_ROLES[roleId];
+  if (!role || !role.permissions) return false;
+  return Boolean(role.permissions[permissionKey]);
 }

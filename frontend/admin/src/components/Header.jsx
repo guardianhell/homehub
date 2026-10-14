@@ -23,7 +23,8 @@ export default function Header({
   onSearchChange,
   pageTitle,
   pageSubtitle,
-  onToggleMobileMenu
+  onToggleMobileMenu,
+  onLogout
 }) {
   return (
     <header className="h-16 bg-slate-900/90 border-b border-slate-800 px-4 md:px-6 flex items-center justify-between sticky top-0 z-20 backdrop-blur-md">
@@ -118,7 +119,7 @@ export default function Header({
           <RotateCcw className="w-4 h-4" />
         </button>
 
-        {/* Admin Avatar */}
+        {/* Admin Avatar & Logout */}
         <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
           <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-xs font-black text-white shadow-xs">
             OP
@@ -127,6 +128,16 @@ export default function Header({
             <p className="text-xs font-bold text-slate-200 leading-tight">Admin Ops</p>
             <p className="text-[10px] text-emerald-400 font-semibold">{currentRole.label}</p>
           </div>
+          {onLogout && (
+            <button
+              type="button"
+              onClick={onLogout}
+              className="ml-2 px-2.5 py-1.5 text-[11px] font-bold text-rose-400 hover:text-white hover:bg-rose-600/80 rounded-xl border border-rose-500/30 transition cursor-pointer"
+              title="Keluar dari sesi admin"
+            >
+              Keluar
+            </button>
+          )}
         </div>
       </div>
     </header>

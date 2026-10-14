@@ -79,7 +79,7 @@ export default function MasterCategoriesView({
   const [formReminder, setFormReminder] = useState('30');
   const [formError, setFormError] = useState('');
 
-  const canManage = hasPermission(currentRole?.id, 'manage_vouchers') || currentRole?.id === 'SUPERADMIN';
+  const canManage = hasPermission(currentRole?.id, 'manage_categories') || currentRole?.id === 'SUPERADMIN';
 
   const currentRegistry = MODULE_CATEGORY_REGISTRY[activeTab] || MODULE_CATEGORY_REGISTRY.utility;
   const currentList = categoriesByModule[activeTab] || (onGetCategories ? onGetCategories(activeTab) : []);

@@ -29,9 +29,16 @@ export default function VouchersView({
   onOpenCreateVoucher, 
   onSelectVoucher, 
   onToggleStatus, 
-  currentRole 
+  currentRole,
+  searchTerm = ''
 }) {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(searchTerm);
+
+  React.useEffect(() => {
+    if (searchTerm !== undefined) {
+      setSearchQuery(searchTerm);
+    }
+  }, [searchTerm]);
   const [statusFilter, setStatusFilter] = useState('ALL'); // ALL, ACTIVE, EXHAUSTED, EXPIRED
   const [copiedCode, setCopiedCode] = useState('');
 

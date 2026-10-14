@@ -110,6 +110,19 @@ export default function AddAssetModal({ isOpen, onClose, onSaveAsset, assetToEdi
     if (errorMsg) setErrorMsg('');
   };
 
+  const invoicePreviewRef = React.useRef(invoicePreview);
+  useEffect(() => {
+    invoicePreviewRef.current = invoicePreview;
+  }, [invoicePreview]);
+
+  useEffect(() => {
+    return () => {
+      if (invoicePreviewRef.current?.url && invoicePreviewRef.current.url.startsWith('blob:')) {
+        URL.revokeObjectURL(invoicePreviewRef.current.url);
+      }
+    };
+  }, []);
+
   // Handle Invoice File Upload (PDF or Image)
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -120,12 +133,17 @@ export default function AddAssetModal({ isOpen, onClose, onSaveAsset, assetToEdi
       return;
     }
 
+    if (invoicePreview?.url && invoicePreview.url.startsWith('blob:')) {
+      URL.revokeObjectURL(invoicePreview.url);
+    }
+
     const previewUrl = URL.createObjectURL(file);
-    setInvoicePreview({
+    const newPreview = {
       name: file.name,
       size: `${(file.size / 1024).toFixed(0)} KB`,
       url: previewUrl
-    });
+    };
+    setInvoicePreview(newPreview);
 
     setFormData((prev) => ({
       ...prev,
@@ -136,6 +154,9 @@ export default function AddAssetModal({ isOpen, onClose, onSaveAsset, assetToEdi
   };
 
   const removeInvoice = () => {
+    if (invoicePreview?.url && invoicePreview.url.startsWith('blob:')) {
+      URL.revokeObjectURL(invoicePreview.url);
+    }
     setInvoicePreview(null);
     setFormData((prev) => ({
       ...prev,

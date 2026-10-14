@@ -13,13 +13,15 @@ export default class ErrorBoundary extends React.Component {
   componentDidCatch(error, errorInfo) {
     console.error('[HomeHub ErrorBoundary Caught]:', error, errorInfo);
     this.setState({ errorInfo });
-    try {
-      window.__HOMEHUB_LAST_ERROR__ = {
-        message: error?.message || String(error),
-        stack: error?.stack,
-        componentStack: errorInfo?.componentStack
-      };
-    } catch (_) {}
+    if (import.meta.env.DEV) {
+      try {
+        window.__HOMEHUB_LAST_ERROR__ = {
+          message: error?.message || String(error),
+          stack: error?.stack,
+          componentStack: errorInfo?.componentStack
+        };
+      } catch (_) {}
+    }
   }
 
   handleReload = () => {
@@ -66,7 +68,7 @@ export default class ErrorBoundary extends React.Component {
               </p>
             </div>
 
-            {this.state.error && (
+            {import.meta.env.DEV && this.state.error && (
               <div className="space-y-2 text-left">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-bold text-red-400 font-mono">

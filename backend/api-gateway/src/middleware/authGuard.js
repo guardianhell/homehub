@@ -4,7 +4,6 @@ const jwt = require("jsonwebtoken");
 
 const JWT_SECRET =
   process.env.JWT_SECRET || "supersecret_jwt_key_homehub_2026_dev_mode";
-const FALLBACK_SECRET = "homehub-super-secret-key-change-in-production";
 
 // Public endpoints that bypass authentication
 const PUBLIC_PATHS = [
@@ -15,27 +14,14 @@ const PUBLIC_PATHS = [
   "/api/v1/auth/login",
   "/api/v1/auth/register",
   "/api/v1/auth/forgot-password",
-  "/admin",
-  "/api/v1/admin",
-  "/auth/admin",
-  "/api/v1/auth/admin",
-  "/admin/feature-limits",
-  "/api/v1/admin/feature-limits",
-  "/auth/admin/feature-limits",
-  "/api/v1/auth/admin/feature-limits",
+  "/admin/login",
+  "/api/v1/admin/login",
+  "/auth/admin/login",
+  "/api/v1/auth/admin/login",
   "/subscriptions/webhook",
   "/api/v1/auth/subscriptions/webhook",
-  "/vouchers",
-  "/api/v1/auth/vouchers",
-  "/auth/vouchers",
-  "/categories",
-  "/api/v1/categories",
-  "/auth/categories",
-  "/api/v1/auth/categories",
-  "/utilities/categories",
-  "/api/v1/utilities/categories",
-  "/auth/utilities/categories",
-  "/api/v1/auth/utilities/categories",
+  "/vouchers/validate",
+  "/api/v1/auth/vouchers/validate",
 ];
 
 /**
@@ -66,6 +52,13 @@ const gatewayAuthGuard = (req, res, next) => {
     );
   });
 
+  // Always strip client-supplied internal spoofable headers
+  delete req.headers["x-user-id"];
+  delete req.headers["x-user-email"];
+  delete req.headers["x-user-role"];
+  delete req.headers["x-household-id"];
+  delete req.headers["x-subscription-tier"];
+
   if (isPublic) {
     return next();
   }
@@ -81,49 +74,28 @@ const gatewayAuthGuard = (req, res, next) => {
 
   const token = authHeader.split(" ")[1];
 
-  // Demo Token Bypass for Pair Testing / Instant Mode
-  if (token.startsWith("demo_")) {
+  // Demo token bypass is only permitted in isolated test runner environment
+  if (process.env.NODE_ENV === "test" && token.startsWith("demo_")) {
     const isPro = token.includes("pro");
     req.headers["x-user-id"] = isPro ? "u-2" : "u-1";
     req.headers["x-user-email"] = isPro
       ? "siti@keluarga.com"
       : "budi@keluarga.com";
     req.headers["x-user-role"] = "OWNER";
-    req.headers["x-household-id"] =
-      req.headers["x-household-id"] || (isPro ? "villa_pro" : "tebet_free");
-    req.headers["x-subscription-tier"] =
-      req.headers["x-subscription-tier"] || (isPro ? "PRO" : "FREE");
+    req.headers["x-household-id"] = isPro ? "villa_pro" : "tebet_free";
+    req.headers["x-subscription-tier"] = isPro ? "PRO" : "FREE";
     return next();
   }
 
   try {
-    let decoded;
-    try {
-      decoded = jwt.verify(token, JWT_SECRET);
-    } catch (verifyErr) {
-      if (verifyErr.name === "TokenExpiredError") {
-        throw verifyErr;
-      }
-      if (JWT_SECRET !== FALLBACK_SECRET) {
-        decoded = jwt.verify(token, FALLBACK_SECRET);
-      } else {
-        throw verifyErr;
-      }
-    }
+    const decoded = jwt.verify(token, JWT_SECRET);
 
-    // Inject verified context headers for downstream microservices
+    // Inject verified context headers exclusively from validated JWT claims
     req.headers["x-user-id"] = decoded.userId;
     req.headers["x-user-email"] = decoded.email;
     req.headers["x-user-role"] = decoded.role || "MEMBER";
-
-    // Use active household from client header or fallback to token household
-    const activeHouseholdId =
-      req.headers["x-household-id"] || decoded.householdId;
-    const activeTier =
-      req.headers["x-subscription-tier"] || decoded.subscriptionTier || "FREE";
-
-    req.headers["x-household-id"] = activeHouseholdId;
-    req.headers["x-subscription-tier"] = activeTier;
+    req.headers["x-household-id"] = decoded.householdId || "";
+    req.headers["x-subscription-tier"] = decoded.subscriptionTier || "FREE";
 
     next();
   } catch (err) {

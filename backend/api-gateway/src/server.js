@@ -21,6 +21,9 @@ const SERVICE_TARGETS = {
   activity: process.env.ACTIVITY_SERVICE_URL || "http://localhost:8006",
 };
 
+// Enable trust proxy for accurate rate limiting behind reverse proxies (M-05)
+app.set("trust proxy", 1);
+
 // 1. Security Headers (Helmet)
 app.use(
   helmet({
@@ -54,7 +57,7 @@ app.use(
         return callback(null, true);
       }
 
-      return callback(null, true);
+      return callback(new Error("CORS policy violation: Origin not allowed"), false);
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -200,7 +203,7 @@ app.use("*", (req, res) => {
 });
 
 // Start Gateway
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 HomeHub API Gateway running on port ${PORT}`);
   console.log(`Routing table initialized for 6 core microservices.`);
 });

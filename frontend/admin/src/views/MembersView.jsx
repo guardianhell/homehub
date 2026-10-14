@@ -20,9 +20,16 @@ export default function MembersView({
   onSelectMember, 
   onToggleStatus, 
   onOpenActivatePro,
-  currentRole 
+  currentRole,
+  searchTerm: externalSearchTerm = ''
 }) {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(externalSearchTerm);
+
+  React.useEffect(() => {
+    if (externalSearchTerm !== undefined) {
+      setSearchTerm(externalSearchTerm);
+    }
+  }, [externalSearchTerm]);
   const [tierFilter, setTierFilter] = useState('ALL'); // ALL | PRO | FREE
   const [statusFilter, setStatusFilter] = useState('ALL'); // ALL | ACTIVE | SUSPENDED
 

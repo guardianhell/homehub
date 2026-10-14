@@ -1333,15 +1333,22 @@ export default function App() {
     }
 
     try {
+      const sanitizeCSV = (val) => {
+        if (val == null) return '""';
+        let str = String(val);
+        if (/^[=+\-@\t\r]/.test(str)) str = "'" + str;
+        return `"${str.replace(/"/g, '""')}"`;
+      };
+
       const headers = ['ID', 'Judul', 'Kategori', 'Nominal', 'Tanggal', 'Dicatat Oleh', 'Tipe'];
       const rows = expenses.map(e => [
-        e.id,
-        `"${(e.title || '').replace(/"/g, '""')}"`,
-        `"${(e.category || '').replace(/"/g, '""')}"`,
+        sanitizeCSV(e.id),
+        sanitizeCSV(e.title || ''),
+        sanitizeCSV(e.category || ''),
         e.amount || 0,
-        e.date || e.expense_date || '',
-        `"${(e.recorded_by_name || '').replace(/"/g, '""')}"`,
-        e.source_type || 'MANUAL'
+        sanitizeCSV(e.date || e.expense_date || ''),
+        sanitizeCSV(e.recorded_by_name || ''),
+        sanitizeCSV(e.source_type || 'MANUAL')
       ]);
       const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
       const encodedUri = encodeURI(csvContent);
@@ -2245,7 +2252,7 @@ export default function App() {
                           <input
                             type="checkbox"
                             checked={item.bought}
-                            onChange={() => toggleBought(item.id)}
+                            onChange={() => handleToggleGroceryClick(item)}
                             className="w-5 h-5 rounded-lg text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                           />
                           <div className="flex-1 min-w-0">

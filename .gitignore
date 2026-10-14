@@ -34,3 +34,7 @@ web-build/
 # Antigravity Local Logs (Keep project configs/rules, ignore machine session logs)
 .gemini/antigravity/
 .system_generated/
+
+# Database Dumps (Sensitive data & PII)
+database/dumps/*.sql
+

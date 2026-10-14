@@ -1,0 +1,33 @@
+# =============================================================================
+# HomeHub Microservice Backend Dockerfile
+# Multi-target build for all backend services & API gateway
+# =============================================================================
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+# Install build dependencies for native modules (e.g., bcrypt)
+RUN apk add --no-cache python3 make g++
+
+# Copy package descriptors
+COPY package*.json ./
+COPY backend/shared ./backend/shared
+
+# Build argument specifying which service to package
+ARG SERVICE_DIR
+ENV SERVICE_DIR=${SERVICE_DIR}
+
+# Copy the target service directory
+COPY ${SERVICE_DIR} ./${SERVICE_DIR}
+
+# Install dependencies for shared library and the target service
+RUN cd backend/shared && npm install --omit=dev
+RUN cd ${SERVICE_DIR} && npm install --omit=dev
+
+# Change working directory to target service
+WORKDIR /app/${SERVICE_DIR}
+
+ENV NODE_ENV=production
+
+# Start the service
+CMD ["node", "src/server.js"]
