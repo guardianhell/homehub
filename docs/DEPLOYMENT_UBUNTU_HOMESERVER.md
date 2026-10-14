@@ -134,13 +134,42 @@ Karena ISP rumah memiliki IP dinamis atau berada di balik CGNAT, **Cloudflare Tu
 
 ---
 
+## 🔄 Cara Memperbarui Kode di Server Saat Ada Update
+
+Setiap kali Anda selesai melakukan perubahan kode di laptop/PC dan sudah di-push ke Git (`git push origin main`), lakukan langkah berikut di terminal Ubuntu Server:
+
+### Cara 1: Menggunakan Script Deploy Otomatis (1 Perintah)
+```bash
+./scripts/deploy.sh
+```
+
+### Cara 2: Perintah Manual Langkah demi Langkah
+```bash
+# 1. Tarik perubahan terbaru dari GitHub
+git pull origin main
+
+# 2. Build ulang container (Docker hanya akan rebuild service yang kodenya berubah)
+docker compose -f docker-compose.prod.yml up -d --build
+
+# 3. (Opsional) Bersihkan image cache lama agar disk tidak penuh
+docker image prune -f
+```
+
+> [!NOTE]
+> **Apakah Data Database Akan Hilang Saat Update Kode?**
+> **TIDAK**. Data MySQL dan Redis disimpan di dalam Docker Volumes permanen (`mysql_data` dan `redis_data`). Saat container di-rebuild atau di-restart, volume data tetap utuh dan tidak terhapus.
+
+---
+
 ## 🛠️ Perintah Berguna untuk Operasional
 
 | Perintah | Deskripsi |
 |---|---|
-| `docker compose -f docker-compose.prod.yml up -d --build` | Update kode terbaru dan build ulang |
+| `./scripts/deploy.sh` | Update kode terbaru dari git dan rebuild container otomatis |
+| `docker compose -f docker-compose.prod.yml up -d --build` | Update kode terbaru dan build ulang manual |
 | `docker compose -f docker-compose.prod.yml down` | Matikan seluruh layanan |
 | `docker compose -f docker-compose.prod.yml restart frontend` | Restart hanya frontend proxy |
 | `docker exec -it homehub-mysql mysql -u root -p` | Masuk ke terminal database MySQL |
 | `npm run db:dump` | Backup database ke file SQL |
 | `npm run db:restore` | Restore database dari dump |
+

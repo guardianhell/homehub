@@ -10,7 +10,8 @@ CREATE DATABASE IF NOT EXISTS db_grocery CHARACTER SET utf8mb4 COLLATE utf8mb4_u
 CREATE DATABASE IF NOT EXISTS db_finance CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE DATABASE IF NOT EXISTS db_activity CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- Grant access to application user (Least Privilege principle)
+-- Ensure application user exists and grant access (Least Privilege principle)
+CREATE USER IF NOT EXISTS 'homehub_user'@'%' IDENTIFIED BY 'homehub_secret';
 GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER ON db_family.* TO 'homehub_user'@'%';
 GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER ON db_utility.* TO 'homehub_user'@'%';
 GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER ON db_asset.* TO 'homehub_user'@'%';

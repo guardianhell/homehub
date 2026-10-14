@@ -31,10 +31,11 @@ services:
     networks:
       - homehub-net
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-rootpassword}"]
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$${MYSQL_ROOT_PASSWORD:-rootpassword} || mysqladmin ping -h localhost --silent"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 40s
 
   redis:
     image: redis:7-alpine
